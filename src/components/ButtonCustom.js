@@ -1,27 +1,44 @@
-import { Pressable, Text, View ,StyleSheet} from "react-native";
-export default function CustomButton({ onPress, children }) {
+import { Pressable, Text, StyleSheet } from "react-native";
+import colors from "../theme/colors";
+
+export default function CustomButton({ onPress, children, variant = "primary" }) {
+  const isOutline = variant === "outline";
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.buttonContainer,
+        styles.button,
+        isOutline && styles.buttonOutline,
         pressed && styles.pressed,
       ]}
     >
-      <View style={styles.button}>
-        <Text style={styles.Text}>{children}</Text>
-      </View>
+      <Text style={[styles.text, isOutline && styles.textOutline]}>{children}</Text>
     </Pressable>
   );
 }
 const styles = StyleSheet.create({
-    buttonContainer:{
-        backgroundColor:'#ff9962'    
-    },
-  buttonPressed: {
-    opacity: 0.7, // Visual feedback for press
+  button: {
+    backgroundColor: colors.brand,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  Text:{
-    color:'white'
-  }
+  buttonOutline: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.brand,
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  text: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  textOutline: {
+    color: colors.brand,
+  },
 });
