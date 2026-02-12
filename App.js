@@ -7,6 +7,7 @@ import LoginScreen from "./src/screens/auth/LoginScreen";
 import SignupScreen from "./src/screens/auth/SignupScreen";
 import AuthContext from "./src/context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { api } from "./src/api/client";
 
 const Stack = createNativeStackNavigator();
 
@@ -41,6 +42,9 @@ export default function App() {
     };
 
     checkUser();
+
+    // Wake backend once so first auth request is less likely to fail on cold start.
+    api.healthCheck().catch(() => {});
   }, []);
 
   const handleAuth = async (user) => {

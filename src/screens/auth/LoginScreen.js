@@ -4,6 +4,8 @@ import ButtonCustom from "../../components/ButtonCustom";
 import colors from "../../theme/colors";
 import { api } from "../../api/client";
 
+const normalizeEmail = (value) => value.trim().toLowerCase();
+
 export default function LoginScreen({ onAuth, navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,10 +14,13 @@ export default function LoginScreen({ onAuth, navigation }) {
   const handleLogin = async () => {
     setStatus("");
     try {
-      const user = await api.login({ email, password });
+      const user = await api.login({
+        email: normalizeEmail(email),
+        password,
+      });
       onAuth(user);
     } catch (err) {
-      setStatus("Invalid login. Try again.");
+      setStatus(err?.message || "Login failed. Please try again.");
     }
   };
 
@@ -32,6 +37,8 @@ export default function LoginScreen({ onAuth, navigation }) {
           onChangeText={setEmail}
           placeholder="you@example.com"
           autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
         />
 
         <Text style={styles.label}>Password</Text>

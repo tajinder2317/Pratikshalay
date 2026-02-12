@@ -1,32 +1,69 @@
-import { Platform } from "react-native";
+const DEFAULT_API_BASE_URL = "https://pratikshalay-backend.onrender.com";
 
-const HOST = Platform.select({
-  ios: "http://localhost:4000",
-  android: "http://10.0.2.2:4000",
-  default: "http://localhost:4000",
-});
+const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+export const API_BASE_URL = (envUrl || DEFAULT_API_BASE_URL).replace(/\/$/, "");
 
-export const API_BASE_URL = HOST;
+const REQUEST_TIMEOUT_MS = 20000;
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || "Request failed");
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+      signal: controller.signal,
+    });
+
+    if (response.status === 204) return null;
+
+    let parsedBody = null;
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      parsedBody = await response.json();
+    } else {
+      const text = await response.text();
+      parsedBody = text || null;
+    }
+
+    if (!response.ok) {
+      const message =
+        (typeof parsedBody === "object" && parsedBody?.message) ||
+        (typeof parsedBody === "string" && parsedBody) ||
+        `Request failed with status ${response.status}`;
+      throw new Error(message);
+    }
+
+    return parsedBody;
+  } catch (error) {
+    const isAbort = error?.name === "AbortError";
+    const isNetworkError =
+      !isAbort &&
+      (error?.message?.includes("Network request failed") ||
+        error?.message?.includes("Failed to fetch"));
+
+    if (isAbort) {
+      throw new Error("Server timeout. Please try again.");
+    }
+
+    if (isNetworkError) {
+      throw new Error(
+        `Cannot reach server at ${API_BASE_URL}. Check internet or API URL.`
+      );
+    }
+
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  if (response.status === 204) return null;
-  return response.json();
 }
 
 export const api = {
+  healthCheck: () => request(`/`),
   getDoctors: ({ q, specialty, sortBy }) => {
     const params = new URLSearchParams();
     if (q) params.append("q", q);

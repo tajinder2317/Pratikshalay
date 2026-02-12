@@ -4,6 +4,8 @@ import ButtonCustom from "../../components/ButtonCustom";
 import colors from "../../theme/colors";
 import { api } from "../../api/client";
 
+const normalizeEmail = (value) => value.trim().toLowerCase();
+
 export default function SignupScreen({ onAuth, navigation }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -13,7 +15,12 @@ export default function SignupScreen({ onAuth, navigation }) {
   const handleSignup = async () => {
     setStatus("");
     try {
-      const user = await api.signUp({ name, email, password, allowReplace: true });
+      const user = await api.signUp({
+        name: name.trim(),
+        email: normalizeEmail(email),
+        password,
+        allowReplace: true,
+      });
       onAuth(user);
     } catch (err) {
       setStatus(err?.message || "Sign up failed. Email may already exist.");
@@ -41,6 +48,8 @@ export default function SignupScreen({ onAuth, navigation }) {
           onChangeText={setEmail}
           placeholder="you@example.com"
           autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
         />
 
         <Text style={styles.label}>Password</Text>
