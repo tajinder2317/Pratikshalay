@@ -6,6 +6,7 @@ import SplashScreen from "./src/screens/auth/SplashScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
 import SignupScreen from "./src/screens/auth/SignupScreen";
 import AuthContext from "./src/context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Stack = createNativeStackNavigator();
 
@@ -27,12 +28,36 @@ export default function App() {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1500);
-    return () => clearTimeout(timer);
+    const checkUser = async () => {
+      try {
+        const userJson = await AsyncStorage.getItem("user");
+        if (userJson) {
+          setUser(JSON.parse(userJson));
+        }
+      } catch (e) {
+        console.error("Failed to load user from storage", e);
+      }
+      setShowSplash(false);
+    };
+
+    checkUser();
   }, []);
 
+  const handleAuth = async (user) => {
+    setUser(user);
+    if (user) {
+      await AsyncStorage.setItem("user", JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem("user");
+    }
+  };
+
+  const logout = () => {
+    handleAuth(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser }}>
+    <AuthContext.Provider value={{ user, setUser: handleAuth, logout }}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {showSplash ? (
@@ -41,7 +66,7 @@ export default function App() {
             <Stack.Screen name="Main" component={AppNavigations} />
           ) : (
             <Stack.Screen name="Auth">
-              {(props) => <AuthStack {...props} onAuth={setUser} />}
+              {(props) => <AuthStack {...props} onAuth={handleAuth} />}
             </Stack.Screen>
           )}
         </Stack.Navigator>
