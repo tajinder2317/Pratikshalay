@@ -3,15 +3,51 @@ import cors from "cors";
 import morgan from "morgan";
 import crypto from "crypto";
 import { initDb, all, get, run } from "./db.js";
+import { defaultDoctors } from "./defaultDoctors.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
+const corsOrigin = process.env.CORS_ORIGIN || "*";
+const allowedOrigins = corsOrigin
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(
+  cors({
+    origin: allowedOrigins.includes("*") ? true : allowedOrigins,
+  })
+);
 app.use(express.json());
 app.use(morgan("dev"));
 
 initDb();
+
+async function seedDoctorsIfEmpty() {
+  const row = await get("SELECT COUNT(*) as count FROM doctors");
+  if ((row?.count || 0) > 0) return;
+
+  for (const doctor of defaultDoctors) {
+    await run(
+      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        doctor.id,
+        doctor.name,
+        doctor.degree,
+        doctor.specialty,
+        doctor.address,
+        doctor.experience,
+        doctor.fee,
+        doctor.rating,
+        doctor.distance,
+        doctor.available,
+      ]
+    );
+  }
+
+  console.log(`Seeded default doctors: ${defaultDoctors.length}`);
+}
 
 app.get("/", (req, res) => {
   res.json({
@@ -19,6 +55,10 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     status: "ok",
   });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
 });
 
 app.get("/api/doctors", async (req, res) => {
@@ -155,11 +195,34 @@ app.delete("/api/favorites/:doctorId", async (req, res) => {
   }
 });
 
+app.get("/api/stats", async (req, res) => {
+  try {
+    const userId = req.query.userId || "guest";
+    const doctorRow = await get("SELECT COUNT(*) as count FROM doctors");
+    const bookingRow = await get(
+      "SELECT COUNT(*) as count FROM bookings WHERE user_id = ?",
+      [userId]
+    );
+    const ratingRow = await get("SELECT AVG(rating) as avg FROM doctors");
+    res.json({
+      doctorCount: doctorRow?.count || 0,
+      bookingCount: bookingRow?.count || 0,
+      avgRating: ratingRow?.avg ? Number(ratingRow.avg.toFixed(1)) : 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
 app.get("/api/bookings", async (req, res) => {
   try {
     const userId = req.query.userId || "guest";
     const bookings = await all(
-      "SELECT * FROM bookings WHERE user_id = ? ORDER BY id DESC",
+      `SELECT bookings.*, doctors.name as doctor_name, doctors.specialty as doctor_specialty
+       FROM bookings
+       LEFT JOIN doctors ON bookings.doctor_id = doctors.id
+       WHERE bookings.user_id = ?
+       ORDER BY bookings.id DESC`,
       [userId]
     );
     res.json(bookings);
@@ -191,6 +254,19 @@ app.post("/api/bookings", async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to create booking" });
+  }
+});
+
+app.delete("/api/bookings/:id", async (req, res) => {
+  try {
+    const userId = req.query.userId || "guest";
+    await run("DELETE FROM bookings WHERE id = ? AND user_id = ?", [
+      req.params.id,
+      userId,
+    ]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to cancel booking" });
   }
 });
 
@@ -284,6 +360,45 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Pratikshalay API running on http://localhost:${port}`);
+app.put("/api/auth/profile", async (req, res) => {
+  try {
+    const { userId, name, email } = req.body;
+    if (!userId || !name || !email) {
+      res.status(400).json({ error: "userId, name, and email are required" });
+      return;
+    }
+
+    const existing = await get(
+      "SELECT * FROM users WHERE email = ? AND id != ?",
+      [email.toLowerCase(), userId]
+    );
+    if (existing) {
+      res.status(409).json({ error: "Email already in use by another account" });
+      return;
+    }
+
+    await run("UPDATE users SET name = ?, email = ? WHERE id = ?", [
+      name,
+      email.toLowerCase(),
+      userId,
+    ]);
+
+    res.json({ id: userId, name, email: email.toLowerCase() });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update profile" });
+  }
 });
+
+async function startServer() {
+  try {
+    await seedDoctorsIfEmpty();
+    app.listen(port, () => {
+      console.log(`Pratikshalay API running on port ${port}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err);
+    process.exit(1);
+  }
+}
+
+startServer();

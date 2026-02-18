@@ -2,7 +2,9 @@ import path from "path";
 import fs from "fs";
 import sqlite3 from "sqlite3";
 
-const dbPath = path.resolve(process.cwd(), "src", "database.sqlite");
+const dataDir = process.env.DATA_DIR || process.env.RENDER_DISK_PATH || process.cwd();
+const dbFileName = process.env.DB_FILE || "database.sqlite";
+const dbPath = path.resolve(dataDir, dbFileName);
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 export const db = new sqlite3.Database(dbPath);
