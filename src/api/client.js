@@ -118,4 +118,23 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ userId, name, email }),
     }),
+  doctorSignUp: ({ doctorId, email, password }) =>
+    request(`/api/doctor-auth/signup`, {
+      method: "POST",
+      body: JSON.stringify({ doctorId, email, password }),
+    }),
+  doctorLogin: ({ email, password }) =>
+    request(`/api/doctor-auth/login`, {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  getDoctorBookings: (doctorId) =>
+    request(`/api/doctor/bookings?doctorId=${encodeURIComponent(doctorId)}`),
+  updateDoctorBookingStatus: ({ bookingId, doctorId, status }) =>
+    request(`/api/doctor/bookings/${bookingId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ doctorId, status }),
+    }),
+  getDoctorStats: (doctorId) =>
+    request(`/api/doctor/stats?doctorId=${encodeURIComponent(doctorId)}`),
 };

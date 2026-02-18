@@ -7,6 +7,7 @@ import AuthContext from "../context/AuthContext";
 
 export default function SettingsTab({ navigation }) {
   const { user, setUser } = useContext(AuthContext);
+  const isDoctor = user?.role === "doctor";
   const [notifications, setNotifications] = useState(true);
   const [reminders, setReminders] = useState(false);
   const [privacy, setPrivacy] = useState(true);
@@ -23,6 +24,7 @@ export default function SettingsTab({ navigation }) {
           <View style={styles.profileInfo}>
             <Text style={styles.accountName}>{user?.name || "Guest User"}</Text>
             <Text style={styles.accountEmail}>{user?.email || "Not signed in"}</Text>
+            {user?.role ? <Text style={styles.accountRole}>{user.role}</Text> : null}
           </View>
           <ButtonCustom variant="outline" onPress={() => setUser(null)}>
             Log Out
@@ -53,11 +55,13 @@ export default function SettingsTab({ navigation }) {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>More</Text>
-          <LinkRow
-            icon="person-outline"
-            label="Edit Profile"
-            onPress={() => navigation.navigate("EditProfile")}
-          />
+          {!isDoctor ? (
+            <LinkRow
+              icon="person-outline"
+              label="Edit Profile"
+              onPress={() => navigation.navigate("EditProfile")}
+            />
+          ) : null}
           <LinkRow
             icon="lock-closed-outline"
             label="Change Password"
@@ -146,6 +150,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  accountRole: {
+    fontSize: 11,
+    color: colors.brand,
+    marginTop: 4,
+    textTransform: "capitalize",
+    fontWeight: "600",
   },
   card: {
     backgroundColor: colors.surface,

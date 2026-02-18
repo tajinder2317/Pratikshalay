@@ -7,7 +7,10 @@ import { api } from "../../api/client";
 const normalizeEmail = (value) => value.trim().toLowerCase();
 
 export default function SignupScreen({ onAuth, navigation }) {
+  const [mode, setMode] = useState("patient");
   const [name, setName] = useState("");
+  const [doctorId, setDoctorId] = useState("");
+  const [doctorName, setDoctorName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -15,15 +18,59 @@ export default function SignupScreen({ onAuth, navigation }) {
   const handleSignup = async () => {
     setStatus("");
     try {
-      const user = await api.signUp({
-        name: name.trim(),
-        email: normalizeEmail(email),
-        password,
-        allowReplace: true,
-      });
+      let user;
+      if (mode === "doctor") {
+        if (!doctorId.trim()) {
+          setStatus("Doctor ID is required for doctor account.");
+          return;
+        }
+        try {
+          user = await api.doctorSignUp({
+            doctorId: doctorId.trim(),
+            email: normalizeEmail(email),
+            password,
+          });
+        } catch (err) {
+          const message = (err?.message || "").toLowerCase();
+          if (message.includes("doctor profile not found")) {
+            if (!doctorName.trim()) {
+              setStatus(
+                "Doctor profile not found. Enter Doctor Name to create profile, then try again."
+              );
+              return;
+            }
+            await api.createDoctor({
+              id: doctorId.trim(),
+              name: doctorName.trim(),
+              degree: "",
+              specialty: "",
+              address: "",
+              experience: 0,
+              fee: 0,
+              rating: 0,
+              distance: 0,
+              available: "On Request",
+            });
+            user = await api.doctorSignUp({
+              doctorId: doctorId.trim(),
+              email: normalizeEmail(email),
+              password,
+            });
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        user = await api.signUp({
+          name: name.trim(),
+          email: normalizeEmail(email),
+          password,
+          allowReplace: true,
+        });
+      }
       onAuth(user);
     } catch (err) {
-      setStatus(err?.message || "Sign up failed. Email may already exist.");
+      setStatus(err?.message || "Sign up failed. Please try again.");
     }
   };
 
@@ -33,13 +80,51 @@ export default function SignupScreen({ onAuth, navigation }) {
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Start booking doctors easily</Text>
 
-        <Text style={styles.label}>Name</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your Name"
-        />
+        <View style={styles.modeRow}>
+          <Text
+            style={[styles.modeChip, mode === "patient" && styles.modeChipActive]}
+            onPress={() => setMode("patient")}
+          >
+            Patient
+          </Text>
+          <Text
+            style={[styles.modeChip, mode === "doctor" && styles.modeChipActive]}
+            onPress={() => setMode("doctor")}
+          >
+            Doctor
+          </Text>
+        </View>
+
+        {mode === "patient" ? (
+          <>
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="Your Name"
+            />
+          </>
+        ) : (
+          <>
+            <Text style={styles.label}>Doctor ID</Text>
+            <TextInput
+              style={styles.input}
+              value={doctorId}
+              onChangeText={setDoctorId}
+              placeholder="Doctor ID (e.g. doc-1)"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Doctor Name (if new doctor ID)</Text>
+            <TextInput
+              style={styles.input}
+              value={doctorName}
+              onChangeText={setDoctorName}
+              placeholder="Dr. Your Name"
+            />
+          </>
+        )}
 
         <Text style={styles.label}>Email</Text>
         <TextInput
@@ -66,7 +151,9 @@ export default function SignupScreen({ onAuth, navigation }) {
 
         <Text style={styles.switchText}>
           Already have an account?{" "}
-          <Text style={styles.linkText} onPress={() => navigation.navigate("Login")}>Login</Text>
+          <Text style={styles.linkText} onPress={() => navigation.navigate("Login")}>
+            Login
+          </Text>
         </Text>
       </ScrollView>
     </View>
@@ -119,5 +206,23 @@ const styles = StyleSheet.create({
   linkText: {
     color: colors.brand,
     fontWeight: "600",
+  },
+  modeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 4,
+  },
+  modeChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: colors.chip,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  modeChipActive: {
+    backgroundColor: colors.brandLight,
+    color: colors.brand,
   },
 });

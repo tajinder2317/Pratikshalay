@@ -15,6 +15,8 @@ export default function DoctorRegister({ navigation }) {
     experience: "",
     fee: "",
     available: "",
+    email: "",
+    password: "",
   });
   const [status, setStatus] = useState("");
 
@@ -27,19 +29,40 @@ export default function DoctorRegister({ navigation }) {
       return;
     }
     try {
-      await api.createDoctor({
-        id: form.id.trim(),
-        name: form.name.trim(),
-        degree: form.degree.trim(),
-        specialty: form.specialty.trim(),
-        address: form.address.trim(),
-        experience: Number(form.experience) || 0,
-        fee: Number(form.fee) || 0,
-        available: form.available.trim() || "On Request",
-        rating: 0,
-        distance: 0,
-      });
-      setStatus("Registration submitted successfully.");
+      let doctorReady = false;
+      try {
+        await api.createDoctor({
+          id: form.id.trim(),
+          name: form.name.trim(),
+          degree: form.degree.trim(),
+          specialty: form.specialty.trim(),
+          address: form.address.trim(),
+          experience: Number(form.experience) || 0,
+          fee: Number(form.fee) || 0,
+          available: form.available.trim() || "On Request",
+          rating: 0,
+          distance: 0,
+        });
+        doctorReady = true;
+      } catch (err) {
+        const existing = await api.getDoctor(form.id.trim());
+        if (existing?.id) {
+          doctorReady = true;
+        } else {
+          throw err;
+        }
+      }
+
+      if (doctorReady && form.email.trim() && form.password.trim()) {
+        await api.doctorSignUp({
+          doctorId: form.id.trim(),
+          email: form.email.trim(),
+          password: form.password,
+        });
+        setStatus("Doctor profile and login account created.");
+      } else if (doctorReady) {
+        setStatus("Doctor profile saved. Add email/password to enable doctor login.");
+      }
       setForm({
         id: "",
         name: "",
@@ -49,9 +72,11 @@ export default function DoctorRegister({ navigation }) {
         experience: "",
         fee: "",
         available: "",
+        email: "",
+        password: "",
       });
     } catch (err) {
-      setStatus("Registration failed. Please try again.");
+      setStatus(err?.message || "Registration failed. Please try again.");
     }
   };
 
@@ -134,6 +159,25 @@ export default function DoctorRegister({ navigation }) {
             onChangeText={(v) => update("available", v)}
             placeholder="Today 4:30 PM"
             style={styles.input}
+          />
+
+          <Text style={styles.label}>Doctor Login Email (optional)</Text>
+          <TextInput
+            value={form.email}
+            onChangeText={(v) => update("email", v)}
+            placeholder="doctor@example.com"
+            style={styles.input}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+
+          <Text style={styles.label}>Doctor Login Password (optional)</Text>
+          <TextInput
+            value={form.password}
+            onChangeText={(v) => update("password", v)}
+            placeholder="Enter password for doctor login"
+            style={styles.input}
+            secureTextEntry
           />
 
           <ButtonCustom onPress={handleSubmit}>Submit Registration</ButtonCustom>

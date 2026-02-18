@@ -7,6 +7,7 @@ import { api } from "../../api/client";
 const normalizeEmail = (value) => value.trim().toLowerCase();
 
 export default function LoginScreen({ onAuth, navigation }) {
+  const [mode, setMode] = useState("patient");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -14,13 +15,19 @@ export default function LoginScreen({ onAuth, navigation }) {
   const handleLogin = async () => {
     setStatus("");
     try {
-      const user = await api.login({
-        email: normalizeEmail(email),
-        password,
-      });
+      const creds = { email: normalizeEmail(email), password };
+      const user =
+        mode === "doctor" ? await api.doctorLogin(creds) : await api.login(creds);
       onAuth(user);
     } catch (err) {
-      setStatus(err?.message || "Login failed. Please try again.");
+      const raw = err?.message || "Login failed. Please try again.";
+      if (mode === "doctor" && raw.toLowerCase().includes("invalid credentials")) {
+        setStatus(
+          "Doctor login failed. Create doctor account first from Signup (Doctor mode) using a valid Doctor ID."
+        );
+      } else {
+        setStatus(raw);
+      }
     }
   };
 
@@ -29,6 +36,21 @@ export default function LoginScreen({ onAuth, navigation }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Login to continue</Text>
+
+        <View style={styles.modeRow}>
+          <Text
+            style={[styles.modeChip, mode === "patient" && styles.modeChipActive]}
+            onPress={() => setMode("patient")}
+          >
+            Patient
+          </Text>
+          <Text
+            style={[styles.modeChip, mode === "doctor" && styles.modeChipActive]}
+            onPress={() => setMode("doctor")}
+          >
+            Doctor
+          </Text>
+        </View>
 
         <Text style={styles.label}>Email</Text>
         <TextInput
@@ -55,7 +77,9 @@ export default function LoginScreen({ onAuth, navigation }) {
 
         <Text style={styles.switchText}>
           New here?{" "}
-          <Text style={styles.linkText} onPress={() => navigation.navigate("Signup")}>Sign Up</Text>
+          <Text style={styles.linkText} onPress={() => navigation.navigate("Signup")}>
+            Sign Up
+          </Text>
         </Text>
       </ScrollView>
     </View>
@@ -108,5 +132,23 @@ const styles = StyleSheet.create({
   linkText: {
     color: colors.brand,
     fontWeight: "600",
+  },
+  modeRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 4,
+  },
+  modeChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    backgroundColor: colors.chip,
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  modeChipActive: {
+    backgroundColor: colors.brandLight,
+    color: colors.brand,
   },
 });

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,8 +11,10 @@ import DoctorCard from "../../components/DoctorCard";
 import ButtonCustom from "../../components/ButtonCustom";
 import { api } from "../../api/client";
 import colors from "../../theme/colors";
+import AuthContext from "../../context/AuthContext";
 
 export default function Doctors({ navigation }) {
+  const { user } = useContext(AuthContext);
   const [query, setQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("All");
   const [sortBy, setSortBy] = useState("distance");
@@ -81,7 +83,7 @@ export default function Doctors({ navigation }) {
     let mounted = true;
     const loadFavorites = async () => {
       try {
-        const favs = await api.getFavorites();
+        const favs = await api.getFavorites(user?.id || "guest");
         if (mounted) setFavorites(favs);
       } catch (err) {
         // silent for demo
@@ -91,7 +93,7 @@ export default function Doctors({ navigation }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user?.id]);
 
   const filteredDoctors = useMemo(() => {
     if (!favoritesOnly) return doctors;
@@ -103,9 +105,9 @@ export default function Doctors({ navigation }) {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
     if (favorites.includes(id)) {
-      api.removeFavorite(id).catch(() => {});
+      api.removeFavorite(id, user?.id || "guest").catch(() => {});
     } else {
-      api.addFavorite(id).catch(() => {});
+      api.addFavorite(id, user?.id || "guest").catch(() => {});
     }
   };
 

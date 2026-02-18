@@ -1,26 +1,28 @@
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../api/client";
 import ButtonCustom from "./ButtonCustom";
 import colors from "../theme/colors";
+import AuthContext from "../context/AuthContext";
 
 export default function HistoryTab({ navigation }) {
+  const { user } = useContext(AuthContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.getBookings();
+      const data = await api.getBookings(user?.id || "guest");
       setBookings(data);
     } catch (err) {
       setBookings([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -30,7 +32,7 @@ export default function HistoryTab({ navigation }) {
 
   const handleCancel = async (bookingId) => {
     try {
-      await api.cancelBooking(bookingId);
+      await api.cancelBooking(bookingId, user?.id || "guest");
       setBookings((prev) => prev.filter((b) => b.id !== bookingId));
     } catch (err) {
       // silent

@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Linking, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ButtonCustom from "../../components/ButtonCustom";
 import { api } from "../../api/client";
 import colors from "../../theme/colors";
+import AuthContext from "../../context/AuthContext";
 
 export default function DoctorDetails({ navigation, route }) {
+  const { user } = useContext(AuthContext);
   const initialDoctor = route?.params?.doctor;
   const doctorId = route?.params?.doctorId || initialDoctor?.id;
   const [doctor, setDoctor] = useState(initialDoctor || null);
@@ -45,7 +47,12 @@ export default function DoctorDetails({ navigation, route }) {
     }
     setBookingLoading(true);
     try {
-      await api.createBooking({ doctorId: doctor.id, date: bookingDate.trim(), time: bookingTime.trim() });
+      await api.createBooking({
+        doctorId: doctor.id,
+        date: bookingDate.trim(),
+        time: bookingTime.trim(),
+        userId: user?.id || "guest",
+      });
       setBookingNote(`Booked for ${bookingDate} at ${bookingTime}`);
       setBookingSuccess(true);
     } catch (err) {

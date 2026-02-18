@@ -14,11 +14,14 @@ export default function HomeTab({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
-      api.getStats().then((data) => {
+      api
+        .getStats(user?.id || "guest")
+        .then((data) => {
         if (mounted) setStats(data);
-      }).catch(() => {});
+        })
+        .catch(() => {});
       return () => { mounted = false; };
-    }, [])
+    }, [user?.id])
   );
 
   const firstName = user?.name?.split(" ")[0] || "there";
