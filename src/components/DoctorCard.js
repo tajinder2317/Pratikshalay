@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import colors from "../theme/colors";
 
 export default function DoctorCard({ doctor, onPress, onToggleFavorite, isFavorite }) {
@@ -7,7 +7,9 @@ export default function DoctorCard({ doctor, onPress, onToggleFavorite, isFavori
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
       <View style={styles.row}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>DR</Text>
+          <Text style={styles.avatarText}>
+            {doctor.name.split(" ").filter(w => w[0] && w[0] === w[0].toUpperCase()).slice(0, 2).map(w => w[0]).join("")}
+          </Text>
         </View>
         <View style={styles.infoCol}>
           <View style={styles.titleRow}>
@@ -52,8 +54,8 @@ export default function DoctorCard({ doctor, onPress, onToggleFavorite, isFavori
 const styles = StyleSheet.create({
   card: {
     width: "100%",
-    padding: 12,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 14,
     backgroundColor: colors.surface,
     marginBottom: 12,
     borderWidth: 1,
@@ -75,7 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.brand,
   },

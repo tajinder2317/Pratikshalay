@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Pratikshalay",
-    "slug": "Pratikshalay",
+    "slug": "pratikshalay",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,10 +20,23 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.tajinder2317.pratikshalay"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d054a15a-ba51-4f0a-b546-53de87816ab6"
+      }
+    },
+    "owner": "tajinder2317",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d054a15a-ba51-4f0a-b546-53de87816ab6"
     }
   }
 }

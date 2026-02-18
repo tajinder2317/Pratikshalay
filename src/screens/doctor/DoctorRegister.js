@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TextInput, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TextInput, ScrollView, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import ButtonCustom from "../../components/ButtonCustom";
 import colors from "../../theme/colors";
 import { api } from "../../api/client";
@@ -57,6 +58,9 @@ export default function DoctorRegister({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
+        </Pressable>
         <Text style={styles.topTitle}>Register Hospital / Clinic</Text>
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -137,9 +141,7 @@ export default function DoctorRegister({ navigation }) {
           <Text style={styles.hint}>For demo: data is stored locally in SQLite.</Text>
         </View>
 
-        <ButtonCustom variant="outline" onPress={() => navigation.goBack()}>
-          Back
-        </ButtonCustom>
+
       </ScrollView>
     </View>
   );
@@ -153,9 +155,13 @@ const styles = StyleSheet.create({
   topBar: {
     height: 56,
     backgroundColor: colors.brand,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  backButton: {
+    padding: 6,
   },
   topTitle: {
     color: "#FFFFFF",

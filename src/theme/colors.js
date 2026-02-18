@@ -9,6 +9,10 @@ const colors = {
   chip: "#F3F4F6",
   chipActive: "#FFE7DA",
   success: "#10B981",
+  successLight: "#D1FAE5",
+  error: "#EF4444",
+  errorLight: "#FEE2E2",
+  warning: "#F59E0B",
 };
 
 export default colors;

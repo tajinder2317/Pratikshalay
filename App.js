@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import AppNavigations from "./src/navigation/Navigations";
 import SplashScreen from "./src/screens/auth/SplashScreen";
 import LoginScreen from "./src/screens/auth/LoginScreen";
@@ -47,10 +48,10 @@ export default function App() {
     api.healthCheck().catch(() => {});
   }, []);
 
-  const handleAuth = async (user) => {
-    setUser(user);
-    if (user) {
-      await AsyncStorage.setItem("user", JSON.stringify(user));
+  const handleAuth = async (nextUser) => {
+    setUser(nextUser);
+    if (nextUser) {
+      await AsyncStorage.setItem("user", JSON.stringify(nextUser));
     } else {
       await AsyncStorage.removeItem("user");
     }
@@ -62,19 +63,21 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ user, setUser: handleAuth, logout }}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {showSplash ? (
-            <Stack.Screen name="Splash" component={SplashScreen} />
-          ) : user ? (
-            <Stack.Screen name="Main" component={AppNavigations} />
-          ) : (
-            <Stack.Screen name="Auth">
-              {(props) => <AuthStack {...props} onAuth={handleAuth} />}
-            </Stack.Screen>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {showSplash ? (
+              <Stack.Screen name="Splash" component={SplashScreen} />
+            ) : user ? (
+              <Stack.Screen name="Main" component={AppNavigations} />
+            ) : (
+              <Stack.Screen name="Auth">
+                {(props) => <AuthStack {...props} onAuth={handleAuth} />}
+              </Stack.Screen>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
     </AuthContext.Provider>
   );
 }

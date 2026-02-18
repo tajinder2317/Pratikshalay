@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Linking, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import ButtonCustom from "../../components/ButtonCustom";
 import { api } from "../../api/client";
 import colors from "../../theme/colors";
@@ -10,6 +10,16 @@ export default function DoctorDetails({ navigation, route }) {
   const doctorId = route?.params?.doctorId || initialDoctor?.id;
   const [doctor, setDoctor] = useState(initialDoctor || null);
   const [bookingNote, setBookingNote] = useState("");
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+
+  const getDefaultDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const [bookingDate, setBookingDate] = useState(getDefaultDate);
+  const [bookingTime, setBookingTime] = useState("10:00");
 
   useEffect(() => {
     let mounted = true;
@@ -23,27 +33,49 @@ export default function DoctorDetails({ navigation, route }) {
       }
     };
     loadDoctor();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [doctorId, initialDoctor]);
 
   const handleBooking = async () => {
     if (!doctor) return;
-    const now = new Date();
-    const date = now.toISOString().slice(0, 10);
-    const time = now.toTimeString().slice(0, 5);
+    if (!bookingDate.trim() || !bookingTime.trim()) {
+      setBookingNote("Please enter both date and time.");
+      setBookingSuccess(false);
+      return;
+    }
+    setBookingLoading(true);
     try {
-      await api.createBooking({ doctorId: doctor.id, date, time });
-      setBookingNote(`Booked for ${date} at ${time}`);
+      await api.createBooking({ doctorId: doctor.id, date: bookingDate.trim(), time: bookingTime.trim() });
+      setBookingNote(`Booked for ${bookingDate} at ${bookingTime}`);
+      setBookingSuccess(true);
     } catch (err) {
       setBookingNote("Booking failed. Try again.");
+      setBookingSuccess(false);
+    } finally {
+      setBookingLoading(false);
     }
+  };
+
+  const handleDirections = () => {
+    if (!doctor) return;
+    const query = encodeURIComponent(doctor.address);
+    const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
+    Linking.openURL(url).catch(() => Alert.alert("Error", "Could not open maps."));
+  };
+
+  const getInitials = (name) => {
+    return name
+      .split(" ")
+      .filter((w) => w[0] && w[0] === w[0].toUpperCase())
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join("");
   };
 
   if (!doctor) {
     return (
       <View style={styles.emptyContainer}>
+        <Ionicons name="medkit-outline" size={48} color={colors.textMuted} />
         <Text style={styles.emptyTitle}>Doctor details not available.</Text>
         <ButtonCustom onPress={() => navigation.goBack()}>Go Back</ButtonCustom>
       </View>
@@ -62,63 +94,113 @@ export default function DoctorDetails({ navigation, route }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>DR</Text>
+            <Text style={styles.avatarText}>{getInitials(doctor.name)}</Text>
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{doctor.name}</Text>
             <Text style={styles.degree}>{doctor.degree}</Text>
-            <Text style={styles.specialty}>{doctor.specialty}</Text>
-            <Text style={styles.address}>{doctor.address}</Text>
+            <View style={styles.specialtyBadge}>
+              <Text style={styles.specialtyBadgeText}>{doctor.specialty}</Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.statRow}>
           <View style={styles.statCard}>
+            <Ionicons name="briefcase-outline" size={16} color={colors.brand} />
             <Text style={styles.statValue}>{doctor.experience}+ yrs</Text>
             <Text style={styles.statLabel}>Experience</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>Rs {doctor.fee}</Text>
+            <Ionicons name="cash-outline" size={16} color={colors.success} />
+            <Text style={styles.statValue}>₹{doctor.fee}</Text>
             <Text style={styles.statLabel}>Consultation</Text>
           </View>
           <View style={styles.statCard}>
+            <Ionicons name="star" size={16} color={colors.warning} />
             <Text style={styles.statValue}>{doctor.rating}</Text>
             <Text style={styles.statLabel}>Rating</Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Next Available</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="time-outline" size={16} color={colors.brand} />
+            <Text style={styles.sectionTitle}>Next Available</Text>
+          </View>
           <Text style={styles.sectionText}>{doctor.available}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Clinic Address</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="location-outline" size={16} color={colors.brand} />
+            <Text style={styles.sectionTitle}>Clinic Address</Text>
+          </View>
           <Text style={styles.sectionText}>{doctor.address}</Text>
           <View style={styles.actionRow}>
-            <ButtonCustom variant="outline" onPress={() => console.log("Directions")}
-            >
+            <ButtonCustom variant="outline" onPress={handleDirections}>
               Directions
-            </ButtonCustom>
-            <ButtonCustom variant="outline" onPress={() => console.log("Call")}
-            >
-              Call
             </ButtonCustom>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.brand} />
+            <Text style={styles.sectionTitle}>About</Text>
+          </View>
           <Text style={styles.sectionText}>
             Experienced in patient care and preventive health. Provides friendly
             consultations and follow-up support.
           </Text>
         </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="calendar-outline" size={16} color={colors.brand} />
+            <Text style={styles.sectionTitle}>Schedule Appointment</Text>
+          </View>
+          <View style={styles.bookingForm}>
+            <View style={styles.bookingField}>
+              <Text style={styles.bookingLabel}>Date</Text>
+              <TextInput
+                style={styles.bookingInput}
+                value={bookingDate}
+                onChangeText={setBookingDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+            <View style={styles.bookingField}>
+              <Text style={styles.bookingLabel}>Time</Text>
+              <TextInput
+                style={styles.bookingInput}
+                value={bookingTime}
+                onChangeText={setBookingTime}
+                placeholder="HH:MM"
+                placeholderTextColor={colors.textMuted}
+              />
+            </View>
+          </View>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <ButtonCustom onPress={handleBooking}>Book Appointment</ButtonCustom>
-        {bookingNote ? <Text style={styles.bookingNote}>{bookingNote}</Text> : null}
+        <ButtonCustom onPress={handleBooking} loading={bookingLoading} disabled={bookingLoading}>
+          Book Appointment
+        </ButtonCustom>
+        {bookingNote ? (
+          <View style={[styles.noteRow, bookingSuccess ? styles.noteSuccess : styles.noteError]}>
+            <Ionicons
+              name={bookingSuccess ? "checkmark-circle" : "alert-circle"}
+              size={14}
+              color={bookingSuccess ? colors.success : colors.error}
+            />
+            <Text style={[styles.bookingNote, bookingSuccess ? styles.noteTextSuccess : styles.noteTextError]}>
+              {bookingNote}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -147,14 +229,14 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: 140,
   },
   profileCard: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 14,
+    padding: 16,
     flexDirection: "row",
-    gap: 12,
+    gap: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -167,7 +249,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.brand,
   },
@@ -184,16 +266,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
   },
-  specialty: {
-    marginTop: 6,
-    fontSize: 12,
-    color: colors.text,
-    fontWeight: "600",
+  specialtyBadge: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    backgroundColor: colors.brandLight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  address: {
-    marginTop: 6,
+  specialtyBadgeText: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.brand,
+    fontWeight: "600",
   },
   statRow: {
     marginTop: 14,
@@ -204,9 +288,10 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 12,
+    paddingVertical: 12,
     alignItems: "center",
+    gap: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -216,27 +301,32 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   statLabel: {
-    marginTop: 4,
     fontSize: 11,
     color: colors.textMuted,
   },
   section: {
-    marginTop: 16,
+    marginTop: 14,
     backgroundColor: colors.surface,
-    borderRadius: 10,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 6,
+  },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: colors.text,
   },
   sectionText: {
-    marginTop: 6,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textMuted,
+    lineHeight: 18,
   },
   actionRow: {
     marginTop: 10,
@@ -252,11 +342,31 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+    gap: 8,
+  },
+  noteRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  noteSuccess: {
+    backgroundColor: colors.successLight,
+  },
+  noteError: {
+    backgroundColor: colors.errorLight,
   },
   bookingNote: {
     fontSize: 12,
-    color: colors.textMuted,
+    flex: 1,
+  },
+  noteTextSuccess: {
+    color: colors.success,
+  },
+  noteTextError: {
+    color: colors.error,
   },
   emptyContainer: {
     flex: 1,
@@ -264,11 +374,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
     backgroundColor: colors.background,
+    gap: 12,
   },
   emptyTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 12,
+  },
+  bookingForm: {
+    marginTop: 8,
+    flexDirection: "row",
+    gap: 10,
+  },
+  bookingField: {
+    flex: 1,
+  },
+  bookingLabel: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 4,
+  },
+  bookingInput: {
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: colors.text,
+    backgroundColor: "#FFFFFF",
   },
 });

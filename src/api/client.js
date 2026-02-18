@@ -1,6 +1,6 @@
 const DEFAULT_API_BASE_URL = "https://pratikshalay-backend.onrender.com";
 
-const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim();
+const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 export const API_BASE_URL = (envUrl || DEFAULT_API_BASE_URL).replace(/\/$/, "");
 
 const REQUEST_TIMEOUT_MS = 20000;
@@ -32,6 +32,7 @@ async function request(path, options = {}) {
 
     if (!response.ok) {
       const message =
+        (typeof parsedBody === "object" && parsedBody?.error) ||
         (typeof parsedBody === "object" && parsedBody?.message) ||
         (typeof parsedBody === "string" && parsedBody) ||
         `Request failed with status ${response.status}`;
@@ -63,8 +64,8 @@ async function request(path, options = {}) {
 }
 
 export const api = {
-  healthCheck: () => request(`/`),
-  getDoctors: ({ q, specialty, sortBy }) => {
+  healthCheck: () => request(`/health`),
+  getDoctors: ({ q, specialty, sortBy } = {}) => {
     const params = new URLSearchParams();
     if (q) params.append("q", q);
     if (specialty && specialty !== "All") params.append("specialty", specialty);
@@ -94,8 +95,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ doctorId, date, time, userId }),
     }),
+  getStats: (userId = "guest") =>
+    request(`/api/stats?userId=${encodeURIComponent(userId)}`),
   getBookings: (userId = "guest") =>
     request(`/api/bookings?userId=${encodeURIComponent(userId)}`),
+  cancelBooking: (id, userId = "guest") =>
+    request(`/api/bookings/${id}?userId=${encodeURIComponent(userId)}`, {
+      method: "DELETE",
+    }),
   signUp: ({ name, email, password, allowReplace = false }) =>
     request(`/api/auth/signup`, {
       method: "POST",
@@ -105,5 +112,10 @@ export const api = {
     request(`/api/auth/login`, {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    }),
+  updateProfile: ({ userId, name, email }) =>
+    request(`/api/auth/profile`, {
+      method: "PUT",
+      body: JSON.stringify({ userId, name, email }),
     }),
 };

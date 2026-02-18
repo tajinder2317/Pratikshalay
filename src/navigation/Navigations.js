@@ -1,12 +1,16 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeTab from "../components/HomeTab";
 import DoctorsTab from "../components/DoctorsTab";
 import HistoryTab from "../components/HistoryTab";
-import SettingTab from "../components/SettingTab";
+import SettingsStack from "../components/SettingsStack";
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigations() {
+  const insets = useSafeAreaInsets();
+  const tabBarBottomPadding = Math.max(insets.bottom - 4, 4);
+
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -34,8 +38,13 @@ export default function AppNavigations() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: "tomato",
-        tabBarInactiveTintColor: "gray",
+        tabBarActiveTintColor: "#FA6515",
+        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarStyle: {
+          height: 56 + tabBarBottomPadding,
+          paddingBottom: tabBarBottomPadding,
+          paddingTop: 4,
+        },
       })}
     >
       <Tab.Screen name="Home" component={HomeTab} />
@@ -45,7 +54,11 @@ export default function AppNavigations() {
         options={{ headerShown: false }}
       />
       <Tab.Screen name="History" component={HistoryTab} />
-      <Tab.Screen name="Settings" component={SettingTab} />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsStack}
+        options={{ headerShown: false }}
+      />
     </Tab.Navigator>
   );
 }
