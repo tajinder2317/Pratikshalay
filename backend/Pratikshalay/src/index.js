@@ -82,7 +82,7 @@ app.post("/api/doctors", async (req, res) => {
     }
 
     await run(
-      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available, is_24_7_available)
+      `INSERT OR REPLACE INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available, is_24_7_available)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,

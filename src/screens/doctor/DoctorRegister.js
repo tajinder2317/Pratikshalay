@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TextInput, ScrollView, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  ScrollView,
+  Pressable,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ButtonCustom from "../../components/ButtonCustom";
 import colors from "../../theme/colors";
@@ -61,7 +68,9 @@ export default function DoctorRegister({ navigation }) {
         });
         setStatus("Doctor profile and login account created.");
       } else if (doctorReady) {
-        setStatus("Doctor profile saved. Add email/password to enable doctor login.");
+        setStatus(
+          "Doctor profile saved. Add email/password to enable doctor login.",
+        );
       }
       setForm({
         id: "",
@@ -83,20 +92,29 @@ export default function DoctorRegister({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.topTitle}>Register Hospital / Clinic</Text>
       </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.card}>
           <Text style={styles.label}>Doctor ID</Text>
           <TextInput
             value={form.id}
             onChangeText={(v) => update("id", v)}
-            placeholder="doc-5"
+            placeholder="doc-1"
             style={styles.input}
           />
+          <Text style={styles.hint}>
+            Available IDs: doc-1, doc-2, doc-3, doc-4
+          </Text>
 
           <Text style={styles.label}>Doctor Name</Text>
           <TextInput
@@ -180,12 +198,14 @@ export default function DoctorRegister({ navigation }) {
             secureTextEntry
           />
 
-          <ButtonCustom onPress={handleSubmit}>Submit Registration</ButtonCustom>
+          <ButtonCustom onPress={handleSubmit}>
+            Submit Registration
+          </ButtonCustom>
           {status ? <Text style={styles.status}>{status}</Text> : null}
-          <Text style={styles.hint}>For demo: data is stored locally in SQLite.</Text>
+          <Text style={styles.hint}>
+            For demo: data is stored locally in SQLite.
+          </Text>
         </View>
-
-
       </ScrollView>
     </View>
   );
