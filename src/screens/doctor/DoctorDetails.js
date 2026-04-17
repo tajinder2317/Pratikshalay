@@ -1,5 +1,14 @@
 import { useContext, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Linking, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  TextInput,
+  Linking,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import ButtonCustom from "../../components/ButtonCustom";
 import { api } from "../../api/client";
@@ -35,7 +44,9 @@ export default function DoctorDetails({ navigation, route }) {
       }
     };
     loadDoctor();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [doctorId, initialDoctor]);
 
   const handleBooking = async () => {
@@ -67,7 +78,9 @@ export default function DoctorDetails({ navigation, route }) {
     if (!doctor) return;
     const query = encodeURIComponent(doctor.address);
     const url = `https://www.google.com/maps/search/?api=1&query=${query}`;
-    Linking.openURL(url).catch(() => Alert.alert("Error", "Could not open maps."));
+    Linking.openURL(url).catch(() =>
+      Alert.alert("Error", "Could not open maps."),
+    );
   };
 
   const getInitials = (name) => {
@@ -92,13 +105,19 @@ export default function DoctorDetails({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backButton}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={20} color="#FFFFFF" />
         </Pressable>
         <Text style={styles.topTitle}>Doctor Details</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{getInitials(doctor.name)}</Text>
@@ -109,6 +128,12 @@ export default function DoctorDetails({ navigation, route }) {
             <View style={styles.specialtyBadge}>
               <Text style={styles.specialtyBadgeText}>{doctor.specialty}</Text>
             </View>
+            {doctor.is_24_7_available && (
+              <View style={styles.badge247}>
+                <Ionicons name="time" size={12} color="#10B981" />
+                <Text style={styles.badge247Text}>Available 24/7</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -153,7 +178,11 @@ export default function DoctorDetails({ navigation, route }) {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.brand} />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.brand}
+            />
             <Text style={styles.sectionTitle}>About</Text>
           </View>
           <Text style={styles.sectionText}>
@@ -193,17 +222,31 @@ export default function DoctorDetails({ navigation, route }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <ButtonCustom onPress={handleBooking} loading={bookingLoading} disabled={bookingLoading}>
+        <ButtonCustom
+          onPress={handleBooking}
+          loading={bookingLoading}
+          disabled={bookingLoading}
+        >
           Book Appointment
         </ButtonCustom>
         {bookingNote ? (
-          <View style={[styles.noteRow, bookingSuccess ? styles.noteSuccess : styles.noteError]}>
+          <View
+            style={[
+              styles.noteRow,
+              bookingSuccess ? styles.noteSuccess : styles.noteError,
+            ]}
+          >
             <Ionicons
               name={bookingSuccess ? "checkmark-circle" : "alert-circle"}
               size={14}
               color={bookingSuccess ? colors.success : colors.error}
             />
-            <Text style={[styles.bookingNote, bookingSuccess ? styles.noteTextSuccess : styles.noteTextError]}>
+            <Text
+              style={[
+                styles.bookingNote,
+                bookingSuccess ? styles.noteTextSuccess : styles.noteTextError,
+              ]}
+            >
               {bookingNote}
             </Text>
           </View>
@@ -284,6 +327,22 @@ const styles = StyleSheet.create({
   specialtyBadgeText: {
     fontSize: 12,
     color: colors.brand,
+    fontWeight: "600",
+  },
+  badge247: {
+    marginTop: 8,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#D1FAE5",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  badge247Text: {
+    fontSize: 11,
+    color: "#10B981",
     fontWeight: "600",
   },
   statRow: {

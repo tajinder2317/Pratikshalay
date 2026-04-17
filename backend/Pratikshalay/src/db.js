@@ -20,8 +20,9 @@ export function initDb() {
         fee INTEGER,
         rating REAL,
         distance REAL,
-        available TEXT
-      )`
+        available TEXT,
+        is_24_7_available INTEGER DEFAULT 0
+      )`,
     );
 
     db.run(
@@ -30,7 +31,7 @@ export function initDb() {
         user_id TEXT NOT NULL,
         doctor_id TEXT NOT NULL,
         UNIQUE(user_id, doctor_id)
-      )`
+      )`,
     );
 
     db.run(
@@ -41,7 +42,7 @@ export function initDb() {
         date TEXT NOT NULL,
         time TEXT NOT NULL,
         status TEXT NOT NULL
-      )`
+      )`,
     );
 
     db.run(
@@ -51,7 +52,7 @@ export function initDb() {
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL
-      )`
+      )`,
     );
   });
 }

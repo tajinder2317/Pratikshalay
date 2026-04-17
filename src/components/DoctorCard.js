@@ -2,13 +2,26 @@ import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../theme/colors";
 
-export default function DoctorCard({ doctor, onPress, onToggleFavorite, isFavorite }) {
+export default function DoctorCard({
+  doctor,
+  onPress,
+  onToggleFavorite,
+  isFavorite,
+}) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
       <View style={styles.row}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {doctor.name.split(" ").filter(w => w[0] && w[0] === w[0].toUpperCase()).slice(0, 2).map(w => w[0]).join("")}
+            {doctor.name
+              .split(" ")
+              .filter((w) => w[0] && w[0] === w[0].toUpperCase())
+              .slice(0, 2)
+              .map((w) => w[0])
+              .join("")}
           </Text>
         </View>
         <View style={styles.infoCol}>
@@ -38,10 +51,17 @@ export default function DoctorCard({ doctor, onPress, onToggleFavorite, isFavori
           <Ionicons name="star" size={12} color={colors.brand} />
           <Text style={styles.badgeText}>{doctor.rating}</Text>
         </View>
-        <View style={styles.badge}>
-          <Ionicons name="time" size={12} color={colors.textMuted} />
-          <Text style={styles.badgeText}>{doctor.available}</Text>
-        </View>
+        {doctor.is_24_7_available ? (
+          <View style={[styles.badge, styles.badge247]}>
+            <Ionicons name="time" size={12} color="#10B981" />
+            <Text style={[styles.badgeText, styles.badgeText247]}>24/7</Text>
+          </View>
+        ) : (
+          <View style={styles.badge}>
+            <Ionicons name="time" size={12} color={colors.textMuted} />
+            <Text style={styles.badgeText}>{doctor.available}</Text>
+          </View>
+        )}
         <View style={styles.badge}>
           <Ionicons name="navigate" size={12} color={colors.textMuted} />
           <Text style={styles.badgeText}>{doctor.distance.toFixed(1)} km</Text>
@@ -131,5 +151,12 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 11,
     color: colors.textMuted,
+  },
+  badge247: {
+    backgroundColor: "#D1FAE5",
+  },
+  badgeText247: {
+    color: "#10B981",
+    fontWeight: "600",
   },
 });

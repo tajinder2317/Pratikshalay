@@ -12,6 +12,7 @@ const doctors = [
     rating: 4.7,
     distance: 0.0,
     available: "Today 4:30 PM",
+    is_24_7_available: 1,
   },
   {
     id: "doc-2",
@@ -24,6 +25,7 @@ const doctors = [
     rating: 4.4,
     distance: 0.0,
     available: "Tomorrow 10:00 AM",
+    is_24_7_available: 0,
   },
   {
     id: "doc-3",
@@ -36,6 +38,7 @@ const doctors = [
     rating: 4.8,
     distance: 1.2,
     available: "Today 6:15 PM",
+    is_24_7_available: 0,
   },
   {
     id: "doc-4",
@@ -48,6 +51,7 @@ const doctors = [
     rating: 4.5,
     distance: 2.6,
     available: "Tomorrow 12:30 PM",
+    is_24_7_available: 1,
   },
 ];
 
@@ -56,8 +60,8 @@ async function seed() {
   await run("DELETE FROM doctors");
   for (const doctor of doctors) {
     await run(
-      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available, is_24_7_available)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         doctor.id,
         doctor.name,
@@ -69,7 +73,8 @@ async function seed() {
         doctor.rating,
         doctor.distance,
         doctor.available,
-      ]
+        doctor.is_24_7_available,
+      ],
     );
   }
 

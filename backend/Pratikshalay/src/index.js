@@ -23,7 +23,7 @@ app.get("/", (req, res) => {
 
 app.get("/api/doctors", async (req, res) => {
   try {
-    const { q, specialty, sortBy = "distance" } = req.query;
+    const { q, specialty, sortBy = "distance", is247Available } = req.query;
     let query = "SELECT * FROM doctors";
     const params = [];
     const filters = [];
@@ -37,6 +37,10 @@ app.get("/api/doctors", async (req, res) => {
     if (specialty && specialty !== "All") {
       filters.push("specialty = ?");
       params.push(specialty);
+    }
+
+    if (is247Available === "true") {
+      filters.push("is_24_7_available = 1");
     }
 
     if (filters.length > 0) {
@@ -69,6 +73,7 @@ app.post("/api/doctors", async (req, res) => {
       rating = 0,
       distance = 0,
       available = "On Request",
+      is_24_7_available = 0,
     } = req.body;
 
     if (!id || !name) {
@@ -77,9 +82,21 @@ app.post("/api/doctors", async (req, res) => {
     }
 
     await run(
-      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, name, degree, specialty, address, experience, fee, rating, distance, available]
+      `INSERT INTO doctors (id, name, degree, specialty, address, experience, fee, rating, distance, available, is_24_7_available)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id,
+        name,
+        degree,
+        specialty,
+        address,
+        experience,
+        fee,
+        rating,
+        distance,
+        available,
+        is_24_7_available,
+      ],
     );
 
     res.status(201).json({
@@ -93,6 +110,7 @@ app.post("/api/doctors", async (req, res) => {
       rating,
       distance,
       available,
+      is_24_7_available,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to create doctor" });
@@ -101,7 +119,9 @@ app.post("/api/doctors", async (req, res) => {
 
 app.get("/api/doctors/:id", async (req, res) => {
   try {
-    const doctor = await get("SELECT * FROM doctors WHERE id = ?", [req.params.id]);
+    const doctor = await get("SELECT * FROM doctors WHERE id = ?", [
+      req.params.id,
+    ]);
     if (!doctor) {
       res.status(404).json({ error: "Doctor not found" });
       return;
@@ -117,7 +137,7 @@ app.get("/api/favorites", async (req, res) => {
     const userId = req.query.userId || "guest";
     const favorites = await all(
       "SELECT doctor_id FROM favorites WHERE user_id = ?",
-      [userId]
+      [userId],
     );
     res.json(favorites.map((row) => row.doctor_id));
   } catch (err) {
@@ -134,7 +154,7 @@ app.post("/api/favorites", async (req, res) => {
     }
     await run(
       "INSERT OR IGNORE INTO favorites (user_id, doctor_id) VALUES (?, ?)",
-      [userId, doctorId]
+      [userId, doctorId],
     );
     res.status(201).json({ ok: true });
   } catch (err) {
@@ -160,7 +180,7 @@ app.get("/api/bookings", async (req, res) => {
     const userId = req.query.userId || "guest";
     const bookings = await all(
       "SELECT * FROM bookings WHERE user_id = ? ORDER BY id DESC",
-      [userId]
+      [userId],
     );
     res.json(bookings);
   } catch (err) {
@@ -178,7 +198,7 @@ app.post("/api/bookings", async (req, res) => {
 
     const result = await run(
       "INSERT INTO bookings (user_id, doctor_id, date, time, status) VALUES (?, ?, ?, ?, ?)",
-      [userId, doctorId, date, time, "confirmed"]
+      [userId, doctorId, date, time, "confirmed"],
     );
 
     res.status(201).json({
@@ -223,7 +243,7 @@ app.post("/api/auth/signup", async (req, res) => {
     if (existing && allowReplace) {
       await run(
         "UPDATE users SET name = ?, password_hash = ? WHERE email = ?",
-        [name, passwordHash, email.toLowerCase()]
+        [name, passwordHash, email.toLowerCase()],
       );
       res.status(200).json({
         id: existing.id,
@@ -236,7 +256,7 @@ app.post("/api/auth/signup", async (req, res) => {
 
     const result = await run(
       "INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
-      [name, email.toLowerCase(), passwordHash, createdAt]
+      [name, email.toLowerCase(), passwordHash, createdAt],
     );
 
     res.status(201).json({
@@ -278,6 +298,92 @@ app.post("/api/auth/login", async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to login" });
+  }
+});
+
+// Doctor authentication endpoints
+app.post("/api/doctor-auth/signup", async (req, res) => {
+  try {
+    const { doctorId, email, password } = req.body;
+    if (!doctorId || !email || !password) {
+      res
+        .status(400)
+        .json({ error: "doctorId, email, and password are required" });
+      return;
+    }
+
+    // Check if doctor exists
+    const doctor = await get("SELECT * FROM doctors WHERE id = ?", [doctorId]);
+    if (!doctor) {
+      res.status(404).json({ error: "Doctor not found" });
+      return;
+    }
+
+    // Check if user already exists
+    const existing = await get("SELECT * FROM users WHERE email = ?", [
+      email.toLowerCase(),
+    ]);
+
+    if (existing) {
+      res.status(409).json({ error: "Email already exists" });
+      return;
+    }
+
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = hashPassword(password, salt);
+    const passwordHash = `${salt}:${hash}`;
+    const createdAt = new Date().toISOString();
+
+    const result = await run(
+      "INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)",
+      [doctor.name, email.toLowerCase(), passwordHash, createdAt],
+    );
+
+    res.status(201).json({
+      id: result.lastID,
+      name: doctor.name,
+      email: email.toLowerCase(),
+      role: "doctor",
+      doctorId: doctorId,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to sign up" });
+  }
+});
+
+app.post("/api/doctor-auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ error: "email and password are required" });
+      return;
+    }
+
+    const user = await get("SELECT * FROM users WHERE email = ?", [
+      email.toLowerCase(),
+    ]);
+
+    if (!user) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    const [salt, storedHash] = user.password_hash.split(":");
+    const hash = hashPassword(password, salt);
+
+    if (hash !== storedHash) {
+      res.status(401).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: "doctor",
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to login" });

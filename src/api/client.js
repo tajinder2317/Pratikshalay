@@ -53,7 +53,7 @@ async function request(path, options = {}) {
 
     if (isNetworkError) {
       throw new Error(
-        `Cannot reach server at ${API_BASE_URL}. Check internet or API URL.`
+        `Cannot reach server at ${API_BASE_URL}. Check internet or API URL.`,
       );
     }
 
@@ -65,11 +65,12 @@ async function request(path, options = {}) {
 
 export const api = {
   healthCheck: () => request(`/health`),
-  getDoctors: ({ q, specialty, sortBy } = {}) => {
+  getDoctors: ({ q, specialty, sortBy, is247Available } = {}) => {
     const params = new URLSearchParams();
     if (q) params.append("q", q);
     if (specialty && specialty !== "All") params.append("specialty", specialty);
     if (sortBy) params.append("sortBy", sortBy);
+    if (is247Available) params.append("is247Available", "true");
     const queryString = params.toString();
     return request(`/api/doctors${queryString ? `?${queryString}` : ""}`);
   },

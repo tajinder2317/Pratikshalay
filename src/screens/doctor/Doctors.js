@@ -1,4 +1,10 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -20,6 +26,7 @@ export default function Doctors({ navigation }) {
   const [sortBy, setSortBy] = useState("distance");
   const [favorites, setFavorites] = useState([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [is247Available, setIs247Available] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -64,6 +71,7 @@ export default function Doctors({ navigation }) {
           q: query.trim(),
           specialty: selectedSpecialty,
           sortBy,
+          is247Available,
         });
         if (mounted) setDoctors(result);
       } catch (err) {
@@ -77,7 +85,7 @@ export default function Doctors({ navigation }) {
     return () => {
       mounted = false;
     };
-  }, [query, selectedSpecialty, sortBy]);
+  }, [query, selectedSpecialty, sortBy, is247Available]);
 
   useEffect(() => {
     let mounted = true;
@@ -102,7 +110,7 @@ export default function Doctors({ navigation }) {
 
   const toggleFavorite = (id) => {
     setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
     if (favorites.includes(id)) {
       api.removeFavorite(id, user?.id || "guest").catch(() => {});
@@ -117,7 +125,9 @@ export default function Doctors({ navigation }) {
         <Text style={styles.sectionTitle}>Nearby Doctors</Text>
         <Pressable
           style={styles.sortChip}
-          onPress={() => setSortBy((prev) => (prev === "distance" ? "rating" : "distance"))}
+          onPress={() =>
+            setSortBy((prev) => (prev === "distance" ? "rating" : "distance"))
+          }
         >
           <Text style={styles.sortChipText}>
             Sort: {sortBy === "distance" ? "Distance" : "Rating"}
@@ -144,7 +154,9 @@ export default function Doctors({ navigation }) {
               style={[styles.chip, isActive && styles.chipActive]}
               onPress={() => setSelectedSpecialty(specialty)}
             >
-              <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+              <Text
+                style={[styles.chipText, isActive && styles.chipTextActive]}
+              >
                 {specialty}
               </Text>
             </Pressable>
@@ -157,13 +169,28 @@ export default function Doctors({ navigation }) {
           onPress={() => setFavoritesOnly((prev) => !prev)}
         >
           <Text
-            style={[styles.toggleChipText, favoritesOnly && styles.toggleChipTextActive]}
+            style={[
+              styles.toggleChipText,
+              favoritesOnly && styles.toggleChipTextActive,
+            ]}
           >
             Favorites Only
           </Text>
         </Pressable>
-        <ButtonCustom variant="outline" onPress={() => setQuery("")}
+        <Pressable
+          style={[styles.toggleChip, is247Available && styles.toggleChipActive]}
+          onPress={() => setIs247Available((prev) => !prev)}
         >
+          <Text
+            style={[
+              styles.toggleChipText,
+              is247Available && styles.toggleChipTextActive,
+            ]}
+          >
+            24/7 Available
+          </Text>
+        </Pressable>
+        <ButtonCustom variant="outline" onPress={() => setQuery("")}>
           Clear Search
         </ButtonCustom>
       </View>
@@ -189,7 +216,9 @@ export default function Doctors({ navigation }) {
             doctor={item}
             isFavorite={favorites.includes(item.id)}
             onToggleFavorite={() => toggleFavorite(item.id)}
-            onPress={() => navigation.navigate("DoctorDetails", { doctor: item })}
+            onPress={() =>
+              navigation.navigate("DoctorDetails", { doctor: item })
+            }
           />
         )}
         ListEmptyComponent={
